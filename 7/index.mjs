@@ -14,6 +14,7 @@ function parseInput(input) {
 }
 
 async function addDataToHand(hand) {
+  let jokerBonus = 0;
   hand.data = hand.hand
     .split("")
     .map((char, i, arr) => {
@@ -25,21 +26,22 @@ async function addDataToHand(hand) {
     .map((card) => {
       switch (card.char) {
         case "A":
-          return { ...card, value: 14 };
-        case "K":
           return { ...card, value: 13 };
-        case "Q":
+        case "K":
           return { ...card, value: 12 };
-        case "J":
+        case "Q":
           return { ...card, value: 11 };
         case "T":
           return { ...card, value: 10 };
+        case "J":
+          jokerBonus += 1;
+          return { ...card, value: 1 };
         default:
           return { ...card, value: Number(card.char) };
       }
     });
 
-  const parsedCards = {};
+  const parsedCards = { J: jokerBonus };
   const freqOfCards = {};
   for (const card of hand.data) {
     if (!parsedCards[card.char]) {
@@ -48,28 +50,110 @@ async function addDataToHand(hand) {
       freqOfCards[card.freq] += 1;
     }
   }
+  hand.jokerBonus = jokerBonus;
+  hand.freqs = freqOfCards;
 
+  // Natural five of a kind
   if (freqOfCards["5"] == 1) {
-    hand.type = "Five of a kind";
     hand.value = 7;
-  } else if (freqOfCards["4"] == 1) {
-    hand.type = "Four of a kind";
+  }
+  // Four of a kind
+  else if (freqOfCards["4"] == 1) {
     hand.value = 6;
-  } else if (freqOfCards["3"] == 1 && freqOfCards["2"] == 1) {
-    hand.type = "Full house";
+    // Five of a kind with a joker
+    if (jokerBonus == 1) {
+      hand.value = 7;
+    }
+  }
+  // Full house
+  else if (freqOfCards["3"] == 1 && freqOfCards["2"] == 1) {
     hand.value = 5;
-  } else if (freqOfCards["3"] == 1) {
-    hand.type = "Three of a kind";
+    // No jokers here
+  }
+  // Three of a kind
+  else if (freqOfCards["3"] == 1) {
     hand.value = 4;
-  } else if (freqOfCards["2"] == 2) {
-    hand.type = "Two pair";
+    // Five of a kind with two jokers
+    if (jokerBonus == 2) {
+      hand.value = 7;
+    }
+    // Four of a kind with one joker
+    else if (jokerBonus == 1) {
+      hand.value = 6;
+    }
+  }
+  // Two pair
+  else if (freqOfCards["2"] == 2) {
     hand.value = 3;
-  } else if (freqOfCards["2"] == 1) {
-    hand.type = "One pair";
+    // Full House with one joker
+    if (jokerBonus == 1) {
+      hand.value = 5;
+    }
+  }
+  // One pair
+  else if (freqOfCards["2"] == 1) {
     hand.value = 2;
-  } else if (freqOfCards["1"] == 5) {
-    hand.type = "High card";
+    // Five of a kind with three jokers
+    if (jokerBonus == 3) {
+      hand.value = 7;
+    }
+    // Four of a kind with two joker
+    else if (jokerBonus == 2) {
+      hand.value = 6;
+    }
+    // Three of a kind with one joker
+    else if (jokerBonus == 1) {
+      hand.value = 4;
+    }
+  }
+  // High card
+  else {
     hand.value = 1;
+    // Five of a kind with five jokers
+    if (jokerBonus == 5) {
+      hand.value = 7;
+    }
+    // Five of a kind with four jokers
+    else if (jokerBonus == 4) {
+      hand.value = 7;
+    }
+    // Four of a kind with three joker
+    else if (jokerBonus == 3) {
+      hand.value = 6;
+    }
+    // Three of a kind with two joker
+    else if (jokerBonus == 2) {
+      hand.value = 4;
+    }
+    // One Pair with one joker
+    else if (jokerBonus == 1) {
+      hand.value = 2;
+    }
+  }
+
+  // Add printable type
+  switch (hand.value) {
+    case 7:
+      hand.type = "Five of a kind";
+      break;
+    case 6:
+      hand.type = "Four of a kind";
+      break;
+    case 5:
+      hand.type = "Full house";
+      break;
+    case 4:
+      hand.type = "Three of a kind";
+      break;
+    case 3:
+      hand.type = "Two pair";
+      break;
+    case 2:
+      hand.type = "One pair";
+      break;
+    case 1:
+      hand.type = "High card";
+      break;
   }
 
   return hand;
@@ -144,7 +228,7 @@ async function getWinningsFromLinkedListOfHands(linkedHand) {
   while (true) {
     let winFromHand = rank * linkedHand.bet;
     console.log(
-      `rank: ${rank} hand: ${linkedHand.hand} winnings: ${winFromHand} bet: ${linkedHand.bet} strenght: ${linkedHand.value}`
+      `rank: ${rank} hand: ${linkedHand.hand} jokers: ${linkedHand.jokerBonus} type: ${linkedHand.type} `
     );
     winnings += winFromHand;
     if (!linkedHand.next) {
@@ -160,7 +244,5 @@ export async function solve(input) {
   const rawHands = parseInput(input);
   const linkedHands = await addRawHandsToLinkedList(rawHands);
   const winnings = await getWinningsFromLinkedListOfHands(linkedHands);
-
-  //console.log(JSON.stringify(linkedHands, null, 2));
   return winnings;
 }
