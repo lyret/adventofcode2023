@@ -1,0 +1,11 @@
+{
+  "name": "advent-of-code-2023",
+  "version": "1.0.0",
+  "description": "My solutions to advent of code 2023",
+  "main": "test.mjs",
+  "scripts": {
+    "test": "node test.mjs"
+  },
+  "author": "Viktor Lyresten <viktor@lyresten.se>",
+  "license": "UNLICENSED"
+}
