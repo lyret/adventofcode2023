@@ -4,8 +4,9 @@ import * as FS from "node:fs";
 // Test the given solution when executed
 (async () => {
   const solution = process.argv[2];
-  const realInsteadofTest =
-    process.argv[3] && process.argv[3].toLowerCase() == "real";
+  const fileNameFilter = process.argv[3]
+    ? process.argv[3].toLowerCase()
+    : undefined;
 
   // Determine the given solution to test
   if (!solution) {
@@ -40,10 +41,9 @@ import * as FS from "node:fs";
   // Find all inputs in the given solution folder
   const inputs = FS.readdirSync(folder)
     .filter((file) => file.toLowerCase().indexOf(".txt") > -1)
-    .filter((file) =>
-      realInsteadofTest
-        ? file.toLowerCase().indexOf("real") > -1
-        : file.toLowerCase().indexOf("test") > -1
+    .filter(
+      (file) =>
+        fileNameFilter && file.toLowerCase().indexOf(fileNameFilter) > -1
     )
     .reverse()
     .map((file) => ({
