@@ -17,25 +17,72 @@ function parseInput(input) {
   };
 }
 
-function traverseNetwork({ directions, network }, start, goal) {
-  let steps = 0;
-  let position = start;
-  let direction = directions[0];
+async function traverseNetwork({ directions, network }) {
+  let positions = Object.keys(network)
+    .filter((node) => node[2] == "A")
+    .map((node) => ({ steps: 0, node }));
+  let maxFoundNrOfSteps = 1;
+
   while (true) {
-    console.log(position);
-    if (position == goal) {
-      return steps;
+    positions = await Promise.all(
+      positions.map(({ steps, node, loop }) => {
+        return new Promise((res) => {
+          if (steps == maxFoundNrOfSteps) {
+            return res({ steps, node, loop });
+          }
+          let prevSteps = steps;
+          let prevNode = node;
+
+          if (loop) {
+            return res({ steps: steps + loop, node, loop });
+          }
+
+          let direction = directions[steps];
+          while (steps < maxFoundNrOfSteps || node[2] != "Z") {
+            direction =
+              directions[
+                steps -
+                  Math.floor(steps / directions.length) * directions.length
+              ];
+            node = network[node][direction];
+            steps++;
+          }
+
+          if (node == prevNode) {
+            loop = steps - prevSteps;
+          }
+
+          return res({ steps, node, loop });
+        });
+      })
+    );
+    maxFoundNrOfSteps = Math.max(...positions.map(({ steps }) => steps));
+
+    if (positions.every(({ steps }) => steps == maxFoundNrOfSteps)) {
+      break;
     }
-    direction =
-      directions[
-        steps - Math.floor(steps / directions.length) * directions.length
-      ];
-    position = network[position][direction];
-    steps++;
+    if (!positions.every(({ loop }) => loop)) {
+      console.log("Every position is looping, solving with lcm");
+      maxFoundNrOfSteps = positions.reduce(
+        (acc, { steps }) => lcm(acc, steps),
+        1
+      );
+      break;
+    }
   }
+  console.log(JSON.stringify(positions), maxFoundNrOfSteps);
+  return maxFoundNrOfSteps;
+}
+
+function gcd(a, b) {
+  return a === 0 ? b : gcd(b % a, a);
+}
+
+function lcm(a, b) {
+  return (a * b) / gcd(a, b);
 }
 
 export function solve(input) {
   const parsedInput = parseInput(input);
-  return traverseNetwork(parsedInput, "AAA", "ZZZ");
+  return traverseNetwork(parsedInput);
 }
