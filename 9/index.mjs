@@ -23,12 +23,14 @@ function addDifferencesToReading(reading) {
     }
     differences.push(diff);
   }
-  reading.lines.push(differences);
 
   if (differencesHasOtherValueThanZero) {
+    reading.lines.push(differences);
     addDifferencesToReading(reading);
+  } else {
+    reading.lines.push([0, ...differences, 0]);
   }
-  return differences;
+  return reading;
 }
 
 function addPredictionsToReading(reading) {
@@ -39,25 +41,25 @@ function addPredictionsToReading(reading) {
     const prediction = xNr + yNr;
     lines[y].push(prediction);
   }
-  //reading.lines.push(differences);
-
-  // if (differences.length >= 2 && differencesHasOtherValueThanZero) {
-  //   addPredictionsToReading(reading);
-  //   //line.push(line[line.length - 1] + differences[differences.length - 1]);
-  // } else {
-  //   differences.push(0);
-  // }
+  for (let y = lines.length - 2; y >= 0; y--) {
+    const yNr = lines[y + 1][0];
+    const xNr = lines[y][0];
+    const prediction = xNr - yNr;
+    lines[y] = [prediction, ...lines[y]];
+  }
   return reading;
 }
 
 export function solve(input) {
   const readings = parseReadingsFromInput(input);
-  let sum = 0;
+  let nextPrediction = 0;
+  let prevPrediction = 0;
   for (const reading of readings) {
     addDifferencesToReading(reading);
     addPredictionsToReading(reading);
     console.log(reading);
-    sum += reading.lines[0][reading.lines[0].length - 1];
+    prevPrediction += reading.lines[0][0];
+    nextPrediction += reading.lines[0][reading.lines[0].length - 1];
   }
-  return sum;
+  return { prevPrediction, nextPrediction };
 }
