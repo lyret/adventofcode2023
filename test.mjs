@@ -4,10 +4,10 @@ import * as FS from "node:fs";
 // Test the given solution when executed
 (async () => {
   const solution = process.argv[2];
-  const fileNameFilter = process.argv[3]
-    ? process.argv[3].toLowerCase()
-    : undefined;
-
+  const fileNameFilter =
+    process.argv[3] && process.argv[3].length
+      ? process.argv[3].toLowerCase()
+      : undefined;
   // Determine the given solution to test
   if (!solution) {
     throw new Error(
@@ -43,7 +43,7 @@ import * as FS from "node:fs";
     .filter((file) => file.toLowerCase().indexOf(".txt") > -1)
     .filter(
       (file) =>
-        fileNameFilter && file.toLowerCase().indexOf(fileNameFilter) > -1
+        !fileNameFilter || file.toLowerCase().indexOf(fileNameFilter) > -1
     )
     .reverse()
     .map((file) => ({
@@ -54,6 +54,7 @@ import * as FS from "node:fs";
   console.log("SOLUTIONS:");
   for (const { name, input } of inputs) {
     console.log(name);
-    console.log(await solve(input));
+    const solution = await solve(input);
+    console.log(JSON.stringify(solution, null, 4));
   }
 })();
